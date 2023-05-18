@@ -1,0 +1,47 @@
+# apply the deployment
+# kubectl apply -f nginx-deployment.yaml
+
+# see changes
+# kubectl get deployments
+# kubectl get rs
+# kubectl get pods --show-labels
+
+# change the image version
+# kubectl edit deployment/nginx-deployment
+# OR
+# kubectl set image deployment.v1.apps/nginx-deployment nginx=nginx:1.16.1
+
+# view changes
+# kubectl rollout status deployment/nginx-deployment
+# kubectl describe deployments
+# kubectl rollout history deployment/nginx-deployment
+
+# rollback
+# kubectl rollout undo deployment/nginx-deployment
+# OR to a specific version:
+# kubectl rollout undo deployment/nginx-deployment --to-revision=2
+
+# scale up
+# kubectl scale deployment/nginx-deployment --replicas=10
+
+apiVersion: "apps/v1"
+kind: "Deployment"
+metadata:
+  name: "nginx-deployment"
+  labels:
+    app: "nginx"
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: "nginx"
+  template:
+    metadata:
+      labels:
+        app: "nginx"
+    spec:
+      containers:
+      - name: "nginx"
+        image: "nginx:1.14.2"
+        ports:
+        - containerPort: 80

@@ -1,0 +1,9 @@
+key: "value"
+arrayVal:
+- 1
+- 2
+- 3
+indentArrayVal:
+  - 1
+  - 2
+  - 3
