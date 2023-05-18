@@ -18,6 +18,10 @@ redis = Redis("redis")
 
 
 def get_random_bytes():
+    # docker-compose has dynamic DNS so 'rng' resolves to the 
+    # address of the rng container
+    # the implementation is different in k8s, 
+    # but the same urls will work
     r = requests.get("http://rng/32")
     return r.content
 
