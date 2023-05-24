@@ -557,3 +557,104 @@ PING localhost (127.0.0.1): 56 data bytes
 64 bytes from 127.0.0.1: seq=2 ttl=64 time=0.267 ms
 64 bytes from 127.0.0.1: seq=3 ttl=64 time=0.138 ms
 ```
+
+## Deployments
+
+Create a deployment instead of a single pod: `kubectl create deployment pingpong --image=alpine -- ping 127.0.0.1`.
+Note `--`: this is used to separate the options of `kubectl create` from the command to run in the container.
+
+This creates a deployment, `pingpong`, with a replica set (ex: `pingpong-5bb8687c6d`), with a pod (ex: `pingpong-5bb8687c6d-5qchp`).
+
+The deployment can be scaled:
+```
+bencoomes@Benjamins-MBP kube-course % kubectl scale deployment pingpong --replicas 3
+deployment.apps/pingpong scaled
+```
+
+Why have deployments, replica sets, and pods? Why not just replica sets and pods?
+Originally, K8s did not have deployments, but it was difficult to manage. 
+For example, in an update, it is easy to create a replica set with the new nodes, then remove the old replica set.
+This allows replica sets to always contain the identical nodes, but requires something to associate the replica sets (a deployment).
+
+## Networking with Services
+
+We can create services which act as a single connection point for deployments.
+
+Create deployment and service:
+```
+kubectl create deployment green --image jpetazzo/color
+kubectl expose deployment green --port 80 
+kubectl expose deployment green 
+```
+
+View service:
+```
+bencoomes@Benjamins-MBP kube-course % kubectl get services                                
+NAME         TYPE        CLUSTER-IP    EXTERNAL-IP   PORT(S)   AGE
+green        ClusterIP   10.96.38.17   <none>        80/TCP    3m12s
+kubernetes   ClusterIP   10.96.0.1     <none>        443/TCP   4d20h
+```
+
+Scale up:
+```
+bencoomes@Benjamins-MBP kube-course % kubectl scale deployment green --replicas 3
+deployment.apps/green scaled
+```
+
+Observe different pods serve curl requests:
+```
+[0.0.0.0] (shpod:N/A) k8s@shpod ~
+$ while sleep 1; do curl 10.96.38.17; done
+🟢This is pod default/green-7548fcf59c-w2lw5 on linux/arm64, serving / for 172.17.0.1:50328.
+🟢This is pod default/green-7548fcf59c-wq9d2 on linux/arm64, serving / for 172.17.0.1:52722.
+🟢This is pod default/green-7548fcf59c-vt2kv on linux/arm64, serving / for 172.17.0.1:41539.
+🟢This is pod default/green-7548fcf59c-wq9d2 on linux/arm64, serving / for 172.17.0.1:41253.
+🟢This is pod default/green-7548fcf59c-vt2kv on linux/arm64, serving / for 172.17.0.1:62384.
+🟢This is pod default/green-7548fcf59c-w2lw5 on linux/arm64, serving / for 172.17.0.1:20155.
+🟢This is pod default/green-7548fcf59c-wq9d2 on linux/arm64, serving / for 172.17.0.1:10091.
+🟢This is pod default/green-7548fcf59c-wq9d2 on linux/arm64, serving / for 172.17.0.1:1767.
+🟢This is pod default/green-7548fcf59c-vt2kv on linux/arm64, serving / for 172.17.0.1:6359.
+🟢This is pod default/green-7548fcf59c-w2lw5 on linux/arm64, serving / for 172.17.0.1:65459.
+^Chtml>
+```
+
+`<service_name>.<namespace>.svc` can also be used to resolve the service:
+```
+[0.0.0.0] (shpod:N/A) k8s@shpod ~
+$ curl green.default.svc
+🟢This is pod default/green-7548fcf59c-wq9d2 on linux/arm64, serving / for 172.17.0.1:10990.
+```
+
+## Exercise: Dockercoins
+
+See slides here for goal cluster: https://2022-11-live.container.training/kube.yml.html#241
+
+Commands:
+
+```
+kubectl create deployment redis --image redis
+kubectl expose deployment redis --port 6379
+
+kubectl create deployment hasher --image dockercoins/hasher:v0.1
+kubectl expose deployment hasher --port 80
+
+kubectl create deployment rng --image dockercoins/rng:v0.1
+kubectl expose deployment rng --port 80
+
+kubectl create deployment worker --image dockercoins/worker:v0.1
+
+kubectl create deployment webui --image dockercoins/webui:v0.1
+kubectl expose deployment webui --port 80 --type LoadBalancer
+```
+
+If using minikube, create a tunnel for the external IP in another terminal (sudo required):
+```
+minikube tunnel
+```
+
+Then the UI should be avilable at http://localhost/index.html !
+
+Scaling the worker deployment changes the 'mining' rate:
+```
+kubectl scale deployment worker --replicas 2
+```
